@@ -1,0 +1,110 @@
+@model List<Company> 
+<!-- takes the array list of category passed from contrroller Product -->
+@{
+    var pageSize = 5; // Change this to adjust the number of items per page
+    var pageCount = (int)Math.Ceiling(Model.Count() / (double)pageSize);
+    var currentPage = ViewData["Page"] as int? ?? 1;
+}
+
+<div class="card shadow border-0 mt-4 mb-5">
+    <div class="card-header bg-secondary bg-gradient ml-0 py-3">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h2 class="text-white py-2">Company List</h2>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="row pb-3">
+            <div class="col-6"></div>
+            <div class="col-6 text-end">
+                <a asp-controller="Company" asp-action="Upsert" class="btn btn-primary"><i style="margin-right: 0.5rem" class="bi bi-plus-circle"></i>Create New Company</a>
+            </div>
+        </div>
+        <div class="table-responsive-md">
+        <table class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>City</th>
+                    <th>State</th>
+                    <th>Phone Number</th>
+                <tr />
+            </thead>
+            <tbody>
+                    @foreach (var obj in Model.Skip((currentPage - 1) * pageSize).Take(pageSize))
+                {
+                    <tr>
+                        <td>@obj.Name</td>
+                        <td>@obj.StreetAddress</td>
+                        <td>@obj.City</td>
+                        <td>@obj.State</td>
+                        <td>@obj.PhoneNumber</td> 
+                        <td>
+                            <div class="w-100 btn-group" role="group">
+                                    <a asp-controller="Company" asp-action="Upsert" asp-route-id="@obj.Id" class="btn btn-primary mx-1"><i style="margin-right: 0.5rem" class="bi bi-pencil-square"></i>Edit</a>
+                                    <a href="#" class="btn btn-danger mx-1 delete-product" data-id="@obj.Id"><i style="margin-right: 0.5rem" class="bi bi-trash-fill"></i>Delete</a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+        <nav>
+            <ul class="pagination justify-content-center">
+                @for (int i = 1; i <= pageCount; i++)
+                {
+                    <li class="page-item @(currentPage == i ? "active" : "")">
+                        <a class="page-link" href="?page=@i">@i</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $(".delete-product").click(function (e) {
+                e.preventDefault()
+                var companyId = $(this).data("id")
+                var totalCompanies = @Model.Count()
+                var totalPages = Math.ceil(totalCompanies / @pageSize)
+                var currentPage = parseInt('@currentPage')
+                var currentPageCompaniesCount = $('tbody > tr').length
+                Swal.fire({
+                    title: "Are you sure?",
+                    text: "You won't be able to revert this!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, delete it!"
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: '@Url.Action("Delete", "Company")',
+                            type: 'POST',
+                            data: { id: companyId },
+                            success: function () {
+                                if (currentPageCompaniesCount === 1 && currentPage > 1) {
+                                    location.href = '?page=' + (currentPage - 1)
+                                } else {
+                                    location.reload()
+                                }
+                            },
+                            error: function () {
+                                toastr.error("An error occurred while deleting the product.")
+                            }
+                        })
+                    }
+                });
+            })
+        })
+    </script>
+}
